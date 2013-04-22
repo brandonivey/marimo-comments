@@ -36,6 +36,25 @@ class MarimoCommentBucket(models.Model):
         """ human readable name """
         return u'{0}:{1}'.format(self.content_type, self.object_id)
 
+    def get_content_object_url(self):
+        """
+        Get a URL suitable for redirecting to the content object.
+        """
+        ct = ContentType.objects.get(id=self.content_type_id)
+        obj = ct.get_object_for_this_type(id=self.object_id)
+
+        return (obj.get_absolute_url() if hasattr(obj, 'get_absolute_url') else '')
+
+    def get_comments(self):
+        """
+        fetch all comments for this bucket
+        """
+        comment_cache = getattr(self, '_comment_cache', None)
+        if comment_cache is None:
+            comment_cache = self.marimocomments.all()
+            self._comment_cache = comment_cache
+        return comment_cache
+
 
 class MarimoComment(models.Model):
     """ A user comment. It lives in a bucket. """
@@ -107,3 +126,22 @@ class MarimoComment(models.Model):
         comments_before_this_one = MarimoComment.objects.filter(bucket=self.bucket,
                                                                 submit_date__lt=self.submit_date)
         return 1 + (comments_before_this_one.count() / constants.COMMENTS_PER_PAGE)
+
+    def get_absolute_url(self, page_number=None):
+        ''' this is somewhat misleading. it is really just the url for the
+        content object with some query params tacked on. we take page_number as a
+        parameter because figuring out a comment's page is a relatively inefficient
+        operation. But if it isn't passed in, we figure it out anyway.'''
+
+        if page_number is None:
+            page_number = self.get_page_number()
+
+        comment_id = self.__dict__['id']
+        burl = self.bucket.get_content_object_url()
+
+        hash_fragment = '/comment/p%s/c%s/' % (page_number, comment_id)
+
+        if '#' in burl:
+            return burl + hash_fragment
+        else:
+            return burl + '#' + hash_fragment
