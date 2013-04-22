@@ -7,6 +7,8 @@ from django.contrib.sites.models import Site
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
+from marimo_comments import constants
+
 COMMENT_MAX_LENGTH = 3000
 
 
@@ -69,3 +71,39 @@ class MarimoComment(models.Model):
     @property
     def originating_site(self):
         return self.bucket.originating_site
+
+    def _get_userinfo(self):
+        """
+        Get a dictionary that pulls together information about the poster
+        safely
+
+        This dict will have ``name`` and possibly ``email`` fields.
+        """
+        if not hasattr(self, "_userinfo"):
+            self._userinfo = {}
+            if self.user is not None:
+                u = self.user
+                if u.email:
+                    self._userinfo["email"] = u.email
+
+                # If the user has a full name, use that for the user name.
+                if u.get_full_name():
+                    self._userinfo["name"] = self.user.get_full_name()
+                else:
+                    self._userinfo["name"] = u.username
+        return self._userinfo
+    userinfo = property(_get_userinfo, doc=_get_userinfo.__doc__)
+
+    def _get_name(self):
+        return self.userinfo["name"]
+    name = property(_get_name, doc="The name of the user who posted this comment")
+
+    def _get_email(self):
+        return self.userinfo["email"]
+    email = property(_get_email, doc="The email of the user who posted this comment")
+
+    def get_page_number(self):
+        """Return the 1-based page # that this comment is displayed on"""
+        comments_before_this_one = MarimoComment.objects.filter(bucket=self.bucket,
+                                                                submit_date__lt=self.submit_date)
+        return 1 + (comments_before_this_one.count() / constants.COMMENTS_PER_PAGE)

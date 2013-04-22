@@ -16,4 +16,5 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.admin',
     'marimo_comments',
+    'example',
 )
