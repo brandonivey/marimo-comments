@@ -21,3 +21,5 @@ comment_help_text = """ "Default" will defer to the the medley comment rules<br 
                         "Enabled" will allow new comments and disregard any rules."""
 
 COMMENTS_PER_PAGE = 20
+
+EDIT_EXPIRATION = 2

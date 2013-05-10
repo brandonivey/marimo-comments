@@ -18,3 +18,10 @@ INSTALLED_APPS = (
     'marimo_comments',
     'example',
 )
+
+SHORT_CACHE_TIMEOUT = 60  # One Minute
+LOGIN_URL = '/auth/signin/'
+
+TEMPLATE_DIRS = (
+    'marimo_comments/templates',
+)
