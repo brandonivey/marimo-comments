@@ -13,6 +13,9 @@ from marimo.template_loader import template_loader
 
 from marimo_comments import constants
 from marimo_comments.models import MarimoCommentBucket, MarimoComment
+from marimo_comments.util.ajax import ajax_auth_required, ajax_error, ajax_only, ajax_required_data, ajax_resp
+
+from sanitizer.templatetags.sanitizer import allowtags
 
 
 class CommentsWidget(BaseWidget):
@@ -109,7 +112,49 @@ class CommentsWidget(BaseWidget):
         # url to redirect to signin
         response['context']['redirect'] = settings.LOGIN_URL
 
+        (total_comments, total_pages) = get_page_and_comment_counts(content_type_id, object_id, site_id)
+
+        # total number of comments
+        response['context']['total_comments'] = total_comments
+        # total pages (also last page since 1 indexed)
+        response['context']['num_pages'] = total_pages
+
         return response
+
+
+@ajax_only
+@ajax_auth_required
+@ajax_required_data(['text', 'content_type_id', 'object_id', 'site_id'])
+def post(request):
+    """
+    Add comment for current user. Update and recache
+    comments. Response contains new comment's id and page.
+    """
+
+    text = request.POST['text']
+    content_type_id = int(request.POST['content_type_id'])
+    object_id = int(request.POST['object_id'])
+    site_id = int(request.POST['site_id'])
+    ip_address = request.META.get('REMOTE_ADDR', None)
+
+    bucket, created = MarimoCommentBucket.objects.get_or_create(
+        content_type_id=content_type_id, object_id=object_id, originating_site_id=site_id)
+
+    text = allowtags(text, 'b br')
+    text = text.replace('<br />', '\n')
+
+    comment = MarimoComment.objects.create(bucket=bucket, user=request.user, text=text, ip_address=ip_address)
+
+    update_count_cache(content_type_id, object_id, site_id)
+
+    comments = MarimoComment.objects.filter(bucket=bucket)
+    num_pages = Paginator(comments, constants.COMMENTS_PER_PAGE).num_pages
+
+    return ajax_resp(200, {
+        'cid': comment.id,
+        'cpage': num_pages,
+    })
+
 
 def get_page_and_comment_counts(content_type_id, object_id, site_id):
     """ reusable method to get the total comment count and page count """
@@ -119,6 +164,7 @@ def get_page_and_comment_counts(content_type_id, object_id, site_id):
         packed = update_count_cache(content_type_id, object_id, site_id)
 
     return packed
+
 
 def update_count_cache(content_type_id, object_id, site_id):
     """ update the comment and page counts in cache """

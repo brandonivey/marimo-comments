@@ -4,11 +4,11 @@ from unittest import TestCase
 
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.flatpages.models import FlatPage
 from django.contrib.sites.models import Site
 
 from mockito import mock, when
 
-from example.models import Entry
 from marimo_comments import constants
 from marimo_comments.models import MarimoCommentBucket, MarimoComment
 
@@ -24,10 +24,10 @@ class MarimoCommentTest(TestCase):
         self.user = User(**self.user_data)
         self.site = Site(pk=1, name='foo', domain='www.foo.com')
         self.datetime = datetime.datetime(2010, 12, 13, 10, 15, 0)
-        self.entry = Entry(pk=1, title='test', content='my entry blah blah blah')
+        self.flatpage = FlatPage(pk=1, title='test', content='my entry blah blah blah')
         self.test_content_type = ContentType(pk=101, name='Entry', app_label='example', model='entry')
         self.bucket = MarimoCommentBucket(pk=1, content_type=self.test_content_type,
-                                          object_id=self.entry.pk, originating_site=self.site)
+                                          object_id=self.flatpage.pk, originating_site=self.site)
         self.comment = MarimoComment(pk=1, text='Test Comment', bucket=self.bucket, user=self.user,
                                      submit_date=self.datetime)
 
@@ -60,5 +60,5 @@ class MarimoCommentTest(TestCase):
 
     def test_comment_get_absolute_url(self):
         when(ContentType.objects).get(id=101).thenReturn(self.test_content_type)
-        when(ContentType).get_object_for_this_type().thenReturn(self.entry)
+        when(ContentType).get_object_for_this_type().thenReturn(self.flatpage)
         assert '#/comment/p1/c1/' == self.comment.get_absolute_url()

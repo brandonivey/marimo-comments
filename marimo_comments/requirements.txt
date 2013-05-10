@@ -3,6 +3,7 @@
 # PyPI listed packages
 pytest
 mockito
+sanitizer
 
 # Marimo specific packages
 -e git://github.com/Savory/django-marimo.git#egg=django-marimo

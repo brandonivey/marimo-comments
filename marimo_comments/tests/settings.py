@@ -25,3 +25,7 @@ LOGIN_URL = '/auth/signin/'
 TEMPLATE_DIRS = (
     'marimo_comments/templates',
 )
+
+MARIMO_TEMPLATE_DIRS = (
+     'marimo_comments/templates',
+)
