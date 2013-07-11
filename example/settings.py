@@ -105,6 +105,10 @@ TEMPLATE_DIRS = (
     'example/templates',
 )
 
+MARIMO_TEMPLATE_DIRS = (
+    'marimo_comments/templates',
+)
+
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',

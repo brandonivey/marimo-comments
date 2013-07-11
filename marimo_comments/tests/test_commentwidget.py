@@ -74,7 +74,7 @@ class CommentsWidgetTest(TestCase):
                                                   originating_site__id=self.site.pk).thenReturn(self.bucket)
 
             qs = mock()
-            when(qs).count().thenReturn(1)
+            when(qs).count().thenReturn(2)
             when(MarimoComment.objects).filter(bucket=self.bucket).thenReturn(qs)
 
             resp = post(self.ajax_req)
@@ -86,4 +86,4 @@ class CommentsWidgetTest(TestCase):
             self.assertEquals(comment.text, comment_text)
 
             (total_comments, total_pages) = get_page_and_comment_counts(self.bucket.content_type_id, self.bucket.object_id, self.site.id)
-            self.assertEquals(total_comments, 1)
+            self.assertEquals(total_comments, 2)
